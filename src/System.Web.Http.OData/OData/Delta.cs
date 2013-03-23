@@ -94,7 +94,34 @@ namespace System.Web.Http.OData
 
             if (value != null && !cacheHit.Property.PropertyType.IsAssignableFrom(value.GetType()))
             {
-                return false;
+                if (cacheHit.Property.PropertyType.IsEnum)
+                {
+                    if (Enum.IsDefined(cacheHit.Property.PropertyType, value) ||
+                        Enum.GetNames(cacheHit.Property.PropertyType).Contains(value.ToString()))
+                    {
+                        object enumeratedObject = Enum.Parse(cacheHit.Property.PropertyType, value.ToString());
+                        value = Convert.ChangeType(enumeratedObject,
+                            Enum.GetUnderlyingType(cacheHit.Property.PropertyType));
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    Type t = Nullable.GetUnderlyingType(cacheHit.Property.PropertyType) ??
+                        cacheHit.Property.PropertyType;
+                    try
+                    {
+                        value = Convert.ChangeType(value, t);
+                    }
+                    catch
+                    {
+
+                        return false;
+                    }
+                }
             }
 
             //.Setter.Invoke(_entity, new object[] { value });
