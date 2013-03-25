@@ -96,16 +96,35 @@ namespace System.Web.Http.OData
             {
                 if (cacheHit.Property.PropertyType.IsEnum)
                 {
-                    if (Enum.IsDefined(cacheHit.Property.PropertyType, value) ||
-                        Enum.GetNames(cacheHit.Property.PropertyType).Contains(value.ToString()))
+                    if (value.GetType() == typeof(string))
                     {
-                        object enumeratedObject = Enum.Parse(cacheHit.Property.PropertyType, value.ToString());
-                        value = Convert.ChangeType(enumeratedObject,
-                            Enum.GetUnderlyingType(cacheHit.Property.PropertyType));
+                        string valueString = value.ToString();
+                        if (Enum.GetNames(cacheHit.Property.PropertyType).Contains(valueString))
+                        {
+                            object enumeratedObject = Enum.Parse(cacheHit.Property.PropertyType, valueString);
+                            value = Convert.ChangeType(enumeratedObject,
+                                Enum.GetUnderlyingType(cacheHit.Property.PropertyType));
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                     else
                     {
-                        return false;
+                        try
+                        {
+                            value = Convert.ChangeType(value,
+                                Enum.GetUnderlyingType(cacheHit.Property.PropertyType));
+                            if (!Enum.IsDefined(cacheHit.Property.PropertyType, value))
+                            {
+                                return false;
+                            }
+                        }
+                        catch
+                        {
+                            return false;
+                        }
                     }
                 }
                 else
@@ -118,7 +137,6 @@ namespace System.Web.Http.OData
                     }
                     catch
                     {
-
                         return false;
                     }
                 }
